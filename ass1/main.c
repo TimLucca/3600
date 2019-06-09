@@ -33,7 +33,11 @@ int main(int argc, char *argv[]) {
     if(WIFEXITED(status)){
         exit_status = WEXITSTATUS(status);
         assert(exit_status == 5);
-        printf("Process %d exited with status: %d \n", fork_pid, exit_status);
+        if(printf("Process %d exited with status: %d \n", fork_pid, exit_status) < 0){
+            int errtemp = errno;
+            perror("printf failed");
+            exit(errtemp);
+        }
     }
     
     exit(0);
