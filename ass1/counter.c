@@ -2,15 +2,55 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <limits.h>
 
 int main(int argc, char *argv[]){
-    int n = atoi(argv[1]);
+    long n, child, parent;
 
-    printf("Parent PID: %ld \n", (long)getppid());
-    printf("Child PID: %ld \n", (long)getpid());
+    n = strtol(argv[1], NULL, 10);
 
-    for(int i = 1; i <= n; i++){
-        printf("Process: %ld %d \n", (long)getpid(), i);
+    if(n==LONG_MAX){
+        int errtemp = errno;
+        perror("overflow");
+        exit(errtemp);
+    }
+    else if(n==LONG_MIN){
+        int errtemp = errno;
+        perror("underflow");
+        exit(errtemp);
+    }
+
+    if((child=(long)getpid()) < 0){
+        int errtemp = errno;
+        perror("getpid failed");
+        exit(errtemp);
+    }
+    if((parent=(long)getppid()) < 0){
+        int errtemp = errno;
+        perror("getppid failed");
+        exit(errtemp);
+    }
+
+    if(printf("Parent PID: %ld \n", parent) < 0){
+        int errtemp = errno;
+        perror("printf failed");
+        exit(errtemp);
+    }
+
+    if(printf("Child PID: %ld \n", child) < 0){
+        int errtemp = errno;
+        perror("printf failed");
+        exit(errtemp);
+    }
+
+    int i;
+    for(i = 1; i <= n; i++){
+        if(printf("Process: %ld %d \n", child, i) < 0){
+            int errtemp = errno;
+            perror("printf failed");
+            exit(errtemp);
+        }
     }
 
     exit(n);
