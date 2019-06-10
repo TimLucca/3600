@@ -5,10 +5,19 @@
 #include <errno.h>
 #include <limits.h>
 
+
 int main(int argc, char *argv[]){
     long n, child, parent;
+    char *endptr;
 
-    n = strtol(argv[1], NULL, 10);
+    n = strtol(argv[1], &endptr, 10);
+    if(*endptr != '\0'){
+        if(fprintf(stderr, "bad input: %s", argv[1]) < 0){
+            int errtemp = errno;
+            perror("print failed");
+            exit(errtemp);
+        }
+    }
 
     if(n==LONG_MAX){
         int errtemp = errno;
