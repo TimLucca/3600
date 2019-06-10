@@ -12,20 +12,20 @@ int main() {
 
     if((fork_pid=fork()) < 0){
         int errtemp = errno;
-        perror("fork failed");
+        perror("fork");
         exit(errtemp);
     }
     
     if(fork_pid==0){
         execl("./counter", "counter", "5", NULL);
         int errtemp = errno;
-        perror("exec failed");
+        perror("execl");
         exit(errtemp);
     }
 
     if((fork_pid=wait(&status)) == -1){
         int errtemp = errno;
-        perror("wait failed");
+        perror("wait");
         exit(errtemp);
     }
 
@@ -34,7 +34,7 @@ int main() {
         assert(exit_status == 5);
         if(printf("Process %d exited with status: %d \n", fork_pid, exit_status) < 0){
             int errtemp = errno;
-            perror("printf failed");
+            perror("printf");
             exit(errtemp);
         }
     }

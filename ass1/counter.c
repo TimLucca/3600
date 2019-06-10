@@ -13,7 +13,7 @@ int main(int argc, char *argv[]){
     if(*endptr != '\0'){
         if(fprintf(stderr, "bad input: %s", argv[1]) < 0){
             int errtemp = errno;
-            perror("print failed");
+            perror("print");
             exit(errtemp);
         }
     }
@@ -31,24 +31,24 @@ int main(int argc, char *argv[]){
 
     if((child=(long)getpid()) < 0){
         int errtemp = errno;
-        perror("getpid failed");
+        perror("getpid");
         exit(errtemp);
     }
     if((parent=(long)getppid()) < 0){
         int errtemp = errno;
-        perror("getppid failed");
+        perror("getppid");
         exit(errtemp);
     }
 
     if(printf("Parent PID: %ld \n", parent) < 0){
         int errtemp = errno;
-        perror("printf failed");
+        perror("printf");
         exit(errtemp);
     }
 
     if(printf("Child PID: %ld \n", child) < 0){
         int errtemp = errno;
-        perror("printf failed");
+        perror("printf");
         exit(errtemp);
     }
 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]){
     for(i = 1; i <= n; i++){
         if(printf("Process: %ld %d \n", child, i) < 0){
             int errtemp = errno;
-            perror("printf failed");
+            perror("printf");
             exit(errtemp);
         }
     }
