@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-int main(int argc, char *argv[]) {
+int main() {
 
     pid_t fork_pid;
     int status, exit_status;
