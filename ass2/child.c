@@ -21,7 +21,9 @@ int main(){
 
     handle(kill(parent_pid, SIGUSR2));
 
-    handle(kill(parent_pid, SIGWINCH));
+    int i;
+    for(i = 0; i < 3; i++)
+        handle(kill(parent_pid, SIGWINCH));
 
     exit(0);
 }

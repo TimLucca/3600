@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <signal.h>
-#include <sys/msg.h>
 
 
 #define handle(p) ({ p; int errtmp = errno; if (errtmp != 0)  { perror(#p) ; exit(errtmp); } }) /* From Luke & Dr. Beaty */
