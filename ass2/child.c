@@ -8,7 +8,9 @@
 #include <signal.h>
 #include <sys/msg.h>
 
-#define handle(p) ({ p; int errtmp = errno; if (errtmp != 0)  { perror(#p) ; exit(errtmp); } }) // From Luke & Dr. Beaty
+#define handle(p) ({ p; int errtmp = errno; if (errtmp != 0)  { perror(#p) ; exit(errtmp); } }) /* From Luke & Dr. Beaty */
+
+int kill(pid_t pid, int sig);
 
 int main(){
     pid_t parent_pid;
@@ -17,6 +19,9 @@ int main(){
 
     handle(kill(parent_pid, SIGUSR1));
 
+    handle(kill(parent_pid, SIGUSR2));
+
+    handle(kill(parent_pid, SIGWINCH));
 
     exit(0);
 }
