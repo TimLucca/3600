@@ -16,15 +16,15 @@
 void handler(int sigval){
     if(sigval == SIGUSR1){
         char str[] = "SIGUSR1 signal recieved\n";
-        write(1, str, sizeof(str));
+        handle(write(1, str, sizeof(str)));
     }
     else if(sigval == SIGUSR2){
         char str[] = "SIGUSR2 signal recieved\n";
-        write(1, str, sizeof(str));
+        handle(write(1, str, sizeof(str)));
     }
     else if(sigval == SIGWINCH){
         char str[] = "SIGWINCH signal recieved\n";
-        write(1, str, sizeof(str));
+        handle(write(1, str, sizeof(str)));
     }
     return;
 }
