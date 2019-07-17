@@ -21,8 +21,7 @@ void handler(int sigval){
     }
 
     if(sigval == SIGCHLD){
-        char str[] = "SIGCHLD signal recieved, exited with status: ";
-        WRITESTRING(str);
+        WRITESTRING("SIGCHLD signal recieved, exited with status: ");
         WRITEINT(exit_status, 2);
         WRITESTRING("\n");
         exit(0);
