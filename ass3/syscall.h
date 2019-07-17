@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include "eye2eh.c"
 
 #define syscall(x) { \
     (x); \
@@ -14,5 +16,4 @@
 #define WRITESTRING(STRING) \
     syscall(write(STDOUT_FILENO, STRING, strlen(STRING)));
 
-#define WRITEINT(INT, LEN) { char buf[LEN]; \
-    syscall(eye2eh(INT, buf, LEN, 10)); WRITESTRING(buf); }
+#define WRITEINT(INT, LEN) { char buf[LEN]; syscall(eye2eh(INT, buf, LEN, 10)); WRITESTRING(buf); }
