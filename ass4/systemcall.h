@@ -19,5 +19,4 @@
 
 int eye2eh(int i, char *buffer, int buffersize, int base);
 
-#define WRITEINT(INT, LEN) { char buf[LEN]; \
-    eye2eh(INT, buf, LEN, 10); WRITESTRING(buf); }
+#define WRITEINT(INT, LEN) { char buf[LEN]; eye2eh(INT, buf, LEN, 10); WRITESTRING(buf); }

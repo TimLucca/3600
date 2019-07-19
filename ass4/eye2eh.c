@@ -22,7 +22,8 @@ int eye2eh(int i, char *buffer, int buffersize, int base) {
 
     int count = 0;
     const char *digits = "0123456789ABCDEF";
-    for (int j = buffersize-2; j >= 0; j--) {
+    int j;
+    for (j = buffersize-2; j >= 0; j--) {
         if (i == 0 && count != 0) {
             buffer[j] = ' ';
         }

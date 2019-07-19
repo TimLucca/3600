@@ -10,25 +10,27 @@
 #include <signal.h>
 #include "syscall.h"
 
-int status, exit_status, fork_pid;
+int eye2eh(int i, char *buffer, int buffersize, int base);
+
+int status, exit_status;
 
 void handler(int sigval){
-    syscall(fork_pid=wait(&status));
+    syscall(wait(&status));
 
-    if(WIFEXITED(status)){
-        exit_status = WEXITSTATUS(status);
-        assert(exit_status == 0);
+    if(WIFSIGNALED(status)){
+        exit_status = WTERMSIG(status);
     }
 
     if(sigval == SIGCHLD){
         WRITESTRING("SIGCHLD signal recieved, exited with status: ");
-        WRITEINT(exit_status, 2);
+        WRITEINT(exit_status, 4);
         WRITESTRING("\n");
         exit(0);
     }
 }
 
 int main(){
+    pid_t fork_pid;
 
     syscall(fork_pid=fork());
 

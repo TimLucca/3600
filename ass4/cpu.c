@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -6,7 +8,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <assert.h>
-#include <systemcall.h>
+#include "systemcall.h"
+#include "eye2eh.c"
 
 /*
 This program does the following.
@@ -70,12 +73,12 @@ enum STATE { NEW, RUNNING, WAITING, READY, TERMINATED, EMPTY };
 
 struct PCB {
     enum STATE state;
-    const char *name;   // name of the executable
-    int pid;            // process id from fork();
-    int ppid;           // parent process id
-    int interrupts;     // number of times interrupted
-    int switches;       // may be < interrupts
-    int started;        // the time this process started
+    const char *name;   /* name of the executable */
+    int pid;            /* process id from fork(); */
+    int ppid;           /* parent process id */
+    int interrupts;     /* number of times interrupted */
+    int switches;       /* may be < interrupts */
+    int started;        /* the time this process started */
 };
 
 typedef enum { false, true } bool;
@@ -97,7 +100,7 @@ void bad(int signum) {
     WRITESTRING("\n");
 }
 
-// cdecl> declare ISV as array 32 of pointer to function(int) returning void
+/* cdecl> declare ISV as array 32 of pointer to function(int) returning void */
 void(*ISV[32])(int) = {
 /*       00   01   02   03   04   05   06   07   08   09 */
 /*  0 */ bad, bad, bad, bad, bad, bad, bad, bad, bad, bad,
@@ -118,7 +121,8 @@ void ISR (int signum) {
 }
 
 void send_signals(int signal, int pid, int interval, int number) {
-    for(int i = 1; i <= number; i++) {
+    int i;
+    for(i = 1; i <= number; i++) {
         sleep(interval);
         WRITESTRING("Sending signal: ");
         WRITEINT(signal, 4);
