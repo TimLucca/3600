@@ -89,6 +89,8 @@ struct PCB processes[10];
 struct PCB idle;
 struct PCB *running;
 
+int last_run = 0; /* Thanks Luke */
+
 int sys_time;
 int timer;
 struct sigaction alarm_handler;
@@ -148,17 +150,11 @@ void create_handler(int signum, struct sigaction action, void(*handler)(int)) {
     systemcall(sigaction(signum, &action, NULL));
 }
 
-void scheduler (int signum) {
-    WRITESTRING("---- entering scheduler\n");
-    assert(signum == SIGALRM);
-
-    running->switches++;
-    running->interrupts++;
-    running->state = READY;
-    
+int check_new() {
     int i;
     for(i=0; i<PROCESSTABLESIZE; i++){
         if(processes[i].state == NEW){
+            running->switches++;
             running = &processes[i];
             WRITESTRING ("Switching to ");
             WRITESTRING(running->name);
@@ -169,19 +165,51 @@ void scheduler (int signum) {
             if(running->pid==0){
                 systemcall(execl(running->name, running->name, NULL));
             }
-            return;            
+            return 1;            
         }
     }
+    return 0;
+}
 
-    for(i=0; i<PROCESSTABLESIZE; i++){
+int check_ready(int start, int end){
+    int i;
+    for(i=start; i<PROCESSTABLESIZE; i++){
         if(processes[i].state == READY){
+            if(running->name != processes[i].name){
+                running->switches++;
+            }
             running = &processes[i];
             WRITESTRING ("Switching to ");
             WRITESTRING(running->name);
             WRITESTRING ("\n");
             running->state = RUNNING;
-            return;
+            systemcall(kill(running->pid, SIGCONT));
+            last_run=i;
+            return 1;
         }
+    }
+    return 0;
+}
+
+void scheduler (int signum) {
+    WRITESTRING("---- entering scheduler\n");
+    assert(signum == SIGALRM);
+
+    running->interrupts++;
+    running->state = READY;
+    
+    if(check_new()){
+        return;
+    }
+
+    WRITESTRING("No more new processes, checking ready\n");
+
+    if(check_ready(last_run, PROCESSTABLESIZE)){
+        return;
+    }
+
+    if(check_ready(0, last_run)){
+        return;
     }
 
     WRITESTRING ("No processes ready, continuing idle: ");
@@ -251,14 +279,14 @@ void create_idle() {
 
 void initialize_processes(int argc, char **args){
     PROCESSTABLESIZE = argc-1;
-
     assert(PROCESSTABLESIZE<=10);
-
     int i;
     for(i=0; i<PROCESSTABLESIZE; i++){
         struct PCB tmp;
         tmp.name = args[i+1];
         tmp.state = NEW;
+        tmp.switches = 0;
+        tmp.interrupts = 0;
         processes[i] = tmp;
     }
 }
