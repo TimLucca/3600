@@ -83,8 +83,8 @@ struct PCB {
 
 typedef enum { false, true } bool;
 
-#define PROCESSTABLESIZE 10
-struct PCB processes[PROCESSTABLESIZE];
+int PROCESSTABLESIZE;
+struct PCB processes[10];
 
 struct PCB idle;
 struct PCB *running;
@@ -152,26 +152,43 @@ void scheduler (int signum) {
     WRITESTRING("---- entering scheduler\n");
     assert(signum == SIGALRM);
 
-    WRITESTRING ("Continuing idle: ");
-    WRITEINT (idle.pid, 6);
-    WRITESTRING ("\n");
-
-    running -> switches++;
-    running -> interrupts++;
-    running -> state = READY;
-
+    running->switches++;
+    running->interrupts++;
+    running->state = READY;
+    
     int i;
     for(i=0; i<PROCESSTABLESIZE; i++){
         if(processes[i].state == NEW){
             running = &processes[i];
-            running -> state = RUNNING;
-            systemcall(running -> ppid = getpid());
-            systemcall(running -> pid = fork());
+            WRITESTRING ("Switching to ");
+            WRITESTRING(running->name);
+            WRITESTRING ("\n");
+            running->state = RUNNING;
+            systemcall(running->ppid = getpid());
+            systemcall(running->pid = fork());
             if(running->pid==0){
-                systemcall(execl(running->name, NULL));
+                systemcall(execl(running->name, running->name, NULL));
             }
+            return;            
         }
     }
+
+    for(i=0; i<PROCESSTABLESIZE; i++){
+        if(processes[i].state == READY){
+            running = &processes[i];
+            WRITESTRING ("Switching to ");
+            WRITESTRING(running->name);
+            WRITESTRING ("\n");
+            running->state = RUNNING;
+            return;
+        }
+    }
+
+    WRITESTRING ("No processes ready, continuing idle: ");
+    WRITEINT (idle.pid, 6);
+    WRITESTRING ("\n");
+    running = &idle;
+    idle.state = RUNNING;
 
     systemcall (kill (idle.pid, SIGCONT));
 
@@ -181,6 +198,20 @@ void scheduler (int signum) {
 void process_done (int signum) {
     WRITESTRING("---- entering process_done\n");
     assert (signum == SIGCHLD);
+
+    WRITESTRING("Process ");
+    WRITEINT(running->pid, 6);
+    WRITESTRING(" has ended\n");
+    WRITEINT(running->interrupts, 4);
+    WRITESTRING(" interrupts, ");
+    WRITEINT(running->switches, 4);
+    WRITESTRING(" switches.\nTime elapsed: ");
+    WRITEINT(sys_time, 6);
+    WRITESTRING("\n");
+
+    running->state = TERMINATED;
+
+    running = &idle;
 
     WRITESTRING ("Timer died, cleaning up and killing everything\n");
     systemcall(kill(0, SIGTERM));
@@ -218,8 +249,22 @@ void create_idle() {
     }
 }
 
-int main(int argc, char **argv) {
+void initialize_processes(int argc, char **args){
+    PROCESSTABLESIZE = argc-1;
 
+    assert(PROCESSTABLESIZE<=10);
+
+    int i;
+    for(i=0; i<PROCESSTABLESIZE; i++){
+        struct PCB tmp;
+        tmp.name = args[i+1];
+        tmp.state = NEW;
+        processes[i] = tmp;
+    }
+}
+
+int main(int argc, char **argv) {
+    initialize_processes(argc, argv);
     boot();
     create_idle();
     running = &idle;
