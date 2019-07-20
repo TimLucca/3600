@@ -10,6 +10,7 @@
 #include <assert.h>
 #include "systemcall.h"
 #include "eye2eh.c"
+#include <time.h>
 
 /*
 This program does the following.
@@ -78,7 +79,7 @@ struct PCB {
     int ppid;           /* parent process id */
     int interrupts;     /* number of times interrupted */
     int switches;       /* may be < interrupts */
-    int started;        /* the time this process started */
+    time_t started;        /* the time this process started */
 };
 
 typedef enum { false, true } bool;
@@ -89,8 +90,9 @@ struct PCB processes[10];
 struct PCB idle;
 struct PCB *running;
 
-int last_run = 0; /* Thanks Luke */
+int next_run = 0; /* Thanks Luke */
 
+int new = 1;
 int sys_time;
 int timer;
 struct sigaction alarm_handler;
@@ -150,7 +152,7 @@ void create_handler(int signum, struct sigaction action, void(*handler)(int)) {
     systemcall(sigaction(signum, &action, NULL));
 }
 
-int check_new() {
+void check_new() {
     int i;
     for(i=0; i<PROCESSTABLESIZE; i++){
         if(processes[i].state == NEW){
@@ -162,29 +164,35 @@ int check_new() {
             running->state = RUNNING;
             systemcall(running->ppid = getpid());
             systemcall(running->pid = fork());
+            running->started = time(NULL);
             if(running->pid==0){
                 systemcall(execl(running->name, running->name, NULL));
             }
-            return 1;            
+            return;            
         }
     }
-    return 0;
+    WRITESTRING("No more new processes.\n");
+    new = 0;
+    return;
 }
 
 int check_ready(int start, int end){
     int i;
-    for(i=start; i<PROCESSTABLESIZE; i++){
+    for(i=start; i<end; i++){
         if(processes[i].state == READY){
-            if(running->name != processes[i].name){
+            if(running->pid != processes[i].pid){
                 running->switches++;
+                running = &processes[i];
+                WRITESTRING ("Switching to ");
             }
-            running = &processes[i];
-            WRITESTRING ("Switching to ");
+            else{
+                WRITESTRING ("Continuing ");
+            }
             WRITESTRING(running->name);
             WRITESTRING ("\n");
             running->state = RUNNING;
             systemcall(kill(running->pid, SIGCONT));
-            last_run=i;
+            next_run=i+1;
             return 1;
         }
     }
@@ -198,17 +206,16 @@ void scheduler (int signum) {
     running->interrupts++;
     running->state = READY;
     
-    if(check_new()){
+    if(new){
+        check_new();
         return;
     }
 
-    WRITESTRING("No more new processes, checking ready\n");
-
-    if(check_ready(last_run, PROCESSTABLESIZE)){
+    if(check_ready(next_run, PROCESSTABLESIZE)){
         return;
     }
 
-    if(check_ready(0, last_run)){
+    if(check_ready(0, next_run)){
         return;
     }
 
@@ -227,6 +234,10 @@ void process_done (int signum) {
     WRITESTRING("---- entering process_done\n");
     assert (signum == SIGCHLD);
 
+    time_t end = time(NULL);
+
+    long elapsed = (long)end - (long)running->started;
+
     WRITESTRING("Process ");
     WRITEINT(running->pid, 6);
     WRITESTRING(" has ended\n");
@@ -234,7 +245,7 @@ void process_done (int signum) {
     WRITESTRING(" interrupts, ");
     WRITEINT(running->switches, 4);
     WRITESTRING(" switches.\nTime elapsed: ");
-    WRITEINT(sys_time, 6);
+    WRITEINT((int)elapsed, 6);
     WRITESTRING("\n");
 
     running->state = TERMINATED;
@@ -242,7 +253,6 @@ void process_done (int signum) {
     running = &idle;
 
     WRITESTRING ("Timer died, cleaning up and killing everything\n");
-    systemcall(kill(0, SIGTERM));
 
     WRITESTRING ("---- leaving process_done\n");
 }
@@ -259,6 +269,7 @@ void boot()
     assert((timer = fork()) != -1);
     if (timer == 0) {
         send_signals(SIGALRM, getppid(), 1, NUM_SECONDS);
+        systemcall(kill(0, SIGTERM));
         exit(0);
     }
 }
@@ -269,7 +280,7 @@ void create_idle() {
     idle.ppid = getpid();
     idle.interrupts = 0;
     idle.switches = 0;
-    idle.started = sys_time;
+    idle.started = time(NULL);
 
     assert((idle.pid = fork()) != -1);
     if (idle.pid == 0) {
