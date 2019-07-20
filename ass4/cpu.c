@@ -66,7 +66,7 @@ Add the following functionality.
    c) Restart the idle process to use the rest of the time slice.
 */
 
-#define NUM_SECONDS 5
+#define NUM_SECONDS 20
 #define ever ;;
 
 enum STATE { NEW, RUNNING, WAITING, READY, TERMINATED, EMPTY };
@@ -155,8 +155,24 @@ void scheduler (int signum) {
     WRITESTRING ("Continuing idle: ");
     WRITEINT (idle.pid, 6);
     WRITESTRING ("\n");
-    running = &idle;
-    idle.state = RUNNING;
+
+    running -> switches++;
+    running -> interrupts++;
+    running -> state = READY;
+
+    int i;
+    for(i=0; i<PROCESSTABLESIZE; i++){
+        if(processes[i].state == NEW){
+            running = &processes[i];
+            running -> state = RUNNING;
+            systemcall(running -> ppid = getpid());
+            systemcall(running -> pid = fork());
+            if(running->pid==0){
+                systemcall(execl(running->name, NULL));
+            }
+        }
+    }
+
     systemcall (kill (idle.pid, SIGCONT));
 
     WRITESTRING("---- leaving scheduler\n");
