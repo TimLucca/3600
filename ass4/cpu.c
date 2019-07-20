@@ -252,8 +252,6 @@ void process_done (int signum) {
 
     running = &idle;
 
-    WRITESTRING ("Timer died, cleaning up and killing everything\n");
-
     WRITESTRING ("---- leaving process_done\n");
 }
 
@@ -269,6 +267,7 @@ void boot()
     assert((timer = fork()) != -1);
     if (timer == 0) {
         send_signals(SIGALRM, getppid(), 1, NUM_SECONDS);
+        WRITESTRING ("Timer died, cleaning up and killing everything\n");
         systemcall(kill(0, SIGTERM));
         exit(0);
     }
