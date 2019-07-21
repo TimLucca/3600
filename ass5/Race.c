@@ -19,23 +19,23 @@
 
 #define NUM_THREADS 2
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 int i;
 
 void *foo (void *bar) {
     printf("in a foo thread, ID %ld\n", (long) pthread_self());
 
-    for (i = 0; i < *((int *) bar); i++) {
+    pthread_mutex_lock(&lock);
 
-        pthread_mutex_lock(&mutex);
+    for (i = 0; i < *((int *) bar); i++) {
         int tmp = i;
         
         if (tmp != i) {
             printf ("aargh: %d != %d\n", tmp, i);
         }
-        pthread_mutex_unlock(&mutex);
     }
+    pthread_mutex_unlock(&lock);
 
     pthread_exit ((void *)pthread_self());
 }
