@@ -17,25 +17,31 @@
 ** You will need to compile your program with a "-lpthread" option.
 */
 
+#define handle(p) ({ p; int errtmp = errno; if (errtmp != 0)  { perror(#p) ; exit(errtmp); } })
+
+
 #define NUM_THREADS 2
 
-pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+int pthread_mutex_init(pthread_mutex_t * mutex, const pthread_mutexattr_t * attr);
+int pthread_mutex_destory(pthread_mutex_t *mutex);
+
+pthread_mutex_t lock;
 
 int i;
 
 void *foo (void *bar) {
-    printf("in a foo thread, ID %ld\n", (long) pthread_self());
+    handle(printf("in a foo thread, ID %ld\n", (long) pthread_self()));
 
-    pthread_mutex_lock(&lock);
+    handle(pthread_mutex_lock(&lock));
 
     for (i = 0; i < *((int *) bar); i++) {
         int tmp = i;
         
         if (tmp != i) {
-            printf ("aargh: %d != %d\n", tmp, i);
+            handle(printf ("aargh: %d != %d\n", tmp, i));
         }
     }
-    pthread_mutex_unlock(&lock);
+    handle(pthread_mutex_unlock(&lock));
 
     pthread_exit ((void *)pthread_self());
 }
@@ -43,7 +49,7 @@ void *foo (void *bar) {
 int main(int argc, char **argv)
 {
     if (argc < 2) {
-        printf("You must supply a numerical argument.\n");
+        handle(printf("You must supply a numerical argument.\n"));
         exit(1);
     }
 
@@ -53,21 +59,25 @@ int main(int argc, char **argv)
 
     pthread_t threads[NUM_THREADS];
     int j;
-    for (j = 0; i < NUM_THREADS; j++) {
+    for (j = 0; j < NUM_THREADS; j++) {
         if (pthread_create(&threads[j], NULL, foo, (void *) &iterations)) {
             perror ("pthread_create");
             return (1);
         }
     }
 
-    for (j = 0; i < NUM_THREADS; j++) {
+    
+    handle(pthread_mutex_init(&lock, NULL)); /* changed to dynamic init instead of static PTHREAD_MUTEX_INITIALIZER, advice from Luke*/
+    for (j = 0; j < NUM_THREADS; j++) {
         void *status;
+        
         if (pthread_join (threads[j], &status)) {
             perror ("pthread_join");
             return (1);
         }
-        printf("joined a foo thread, number %ld\n", (long) status);
+        
+        handle(printf("joined a foo thread, number %ld\n", (long) status));
     }
-
+    handle(pthread_mutex_destroy(&lock));
     return (0);
 }
